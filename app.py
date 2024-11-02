@@ -21,6 +21,10 @@ SCOPE = "openid email profile"
 oauth2 = OAuth2Component(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, AUTHORIZATION_URL, TOKEN_URL, TOKEN_URL, REVOKE_URL)
 
 
+# Initialize a rerun toggle in session state
+if "rerun_trigger" not in st.session_state:
+    st.session_state["rerun_trigger"] = False
+
 # OAuth flow
 if 'token' not in st.session_state:
     result = oauth2.authorize_button(
@@ -38,8 +42,8 @@ if 'token' not in st.session_state:
         # Clear query params to avoid repeating the OAuth flow
         st.experimental_set_query_params()
         
-        # Toggle a value in session state to force a rerun
-        st.session_state['rerun'] = not st.session_state.get('rerun', False)
+        # Toggle the rerun trigger to force a page refresh
+        st.session_state["rerun_trigger"] = not st.session_state["rerun_trigger"]
         
 else:
     # Display user content when logged in
