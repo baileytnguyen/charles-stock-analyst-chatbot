@@ -27,12 +27,10 @@ GOOGLE_AUTH_URL = (
 
 st.title("Streamlit Google OAuth and Supabase Integration")
 
+# Function to get Google user info
 def get_google_user_info(auth_code):
-    """Exchange code for token and retrieve user info from Google"""
     token_url = "https://oauth2.googleapis.com/token"
     user_info_url = "https://www.googleapis.com/oauth2/v3/userinfo"
-
-    # Step 1: Exchange code for access token
     token_data = {
         "code": auth_code,
         "client_id": GOOGLE_CLIENT_ID,
@@ -40,65 +38,45 @@ def get_google_user_info(auth_code):
         "redirect_uri": REDIRECT_URI,
         "grant_type": "authorization_code"
     }
-    
     token_response = requests.post(token_url, data=token_data)
-    
-    # Debugging: Check token response
-    st.write("Token response:", token_response.json())
-    
     token_json = token_response.json()
     access_token = token_json.get("access_token")
-
     if not access_token:
         st.error("Failed to retrieve access token.")
         return None
-
-    # Step 2: Retrieve user info
     headers = {"Authorization": f"Bearer {access_token}"}
     user_info_response = requests.get(user_info_url, headers=headers)
-    
-    # Debugging: Check user info response
-    st.write("User info response:", user_info_response.json())
-    
     return user_info_response.json()
 
+# Function to store user data
 def store_user_data(email, data):
-    """Store user data in Supabase"""
-    response = supabase.table("user_data").insert({"email": email, "data": data}).execute()
-    
-    # Debugging: Check if data was stored successfully
-    st.write("Supabase insert response:", response)
+    supabase.table("user_data").insert({"email": email, "data": data}).execute()
 
-# Authentication flow
+# Check for auth code in query params
 auth_code = st.query_params.get("code")
 if auth_code:
-    # Clear query params to avoid re-triggering
-    st.experimental_set_query_params()
-    st.experimental_rerun()
-    
-    # Debugging: Check if auth code is retrieved
-    st.write("Auth code:", auth_code)
-
-    # Retrieve user information using the auth code
+    st.experimental_set_query_params()  # Clear query params
     user_info = get_google_user_info(auth_code[0])
-    
-    # Debugging: Check if user info is retrieved
-    st.write("User info:", user_info)
-    
+
+    # Check if user info was successfully retrieved
     if user_info:
-        email = user_info["email"]
+        email = user_info.get("email")
         st.session_state["user"] = email
         st.success(f"Welcome, {email}!")
-        
-        # User input section
-        user_data = st.text_area("Enter some data:")
-        
-        if st.button("Submit"):
-            
-            # Debugging: Check if data is ready to be stored
-            st.write("Storing data:", {"email": email, "data": user_data})
-            
-            store_user_data(email, user_data)
-            st.success("Data saved successfully!")
+    else:
+        st.error("Failed to retrieve user information.")
+        st.stop()  # Stop execution if user info fails to load
+
+# Display content based on login state
+if "user" in st.session_state:
+    # Content for logged-in users
+    st.header("User Dashboard")
+    st.write("You are logged in successfully.")
+
+    user_data = st.text_area("Enter some data:")
+    if st.button("Submit"):
+        store_user_data(st.session_state["user"], user_data)
+        st.success("Data saved successfully!")
 else:
+    # Show Google login link if not logged in
     st.markdown(f"[Login with Google]({GOOGLE_AUTH_URL})")
