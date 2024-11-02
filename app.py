@@ -2,54 +2,70 @@ import streamlit as st
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import os
+import requests
 
-# Load environment variables from .env file
+# Load environment variables
 load_dotenv()
 
-# Fetch Supabase credentials from environment variables
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_API_KEY = os.getenv("SUPABASE_API_KEY")
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+REDIRECT_URI = "https://your-username-your-app-name.streamlit.app/auth/v1/callback"  # Replace with your Streamlit app URL
 
-# Initialize the Supabase client
+# Initialize Supabase client
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_API_KEY)
 
-# Streamlit app layout
-st.title("Streamlit Supabase Google Authentication")
+# Google OAuth login URL
+GOOGLE_AUTH_URL = (
+    "https://accounts.google.com/o/oauth2/auth"
+    f"?client_id={GOOGLE_CLIENT_ID}"
+    f"&redirect_uri={REDIRECT_URI}"
+    "&response_type=code"
+    "&scope=openid%20email%20profile"
+)
 
-# State management for session
-if 'authenticated' not in st.session_state:
-    st.session_state.authenticated = False
-if 'user' not in st.session_state:
-    st.session_state.user = None
+st.title("Streamlit Google OAuth and Supabase Integration")
 
-def login_with_google():
-    """Function to log in a user using Google."""
-    try:
-        # Redirect to Google login
-        url = supabase.auth.signInWithOAuth("google")
-        st.write("Please log in using the following link:")
-        st.markdown(f"[Login with Google]({url})")
-    except Exception as e:
-        st.error("Google login failed. Please try again.")
+def get_google_user_info(auth_code):
+    """Exchange code for token and retrieve user info from Google"""
+    token_url = "https://oauth2.googleapis.com/token"
+    user_info_url = "https://www.googleapis.com/oauth2/v3/userinfo"
 
-def logout_user():
-    """Function to log out the current user."""
-    st.session_state.authenticated = False
-    st.session_state.user = None
-    st.info("Logged out successfully.")
+    # Step 1: Exchange code for access token
+    token_data = {
+        "code": auth_code,
+        "client_id": GOOGLE_CLIENT_ID,
+        "client_secret": GOOGLE_CLIENT_SECRET,
+        "redirect_uri": REDIRECT_URI,
+        "grant_type": "authorization_code"
+    }
+    token_response = requests.post(token_url, data=token_data)
+    token_json = token_response.json()
+    access_token = token_json.get("access_token")
 
-# Login with Google
-if not st.session_state.authenticated:
-    st.subheader("Login with Google")
+    # Step 2: Retrieve user info
+    headers = {"Authorization": f"Bearer {access_token}"}
+    user_info_response = requests.get(user_info_url, headers=headers)
+    return user_info_response.json()
 
-    if st.button("Login with Google"):
-        login_with_google()
+def store_user_data(email, data):
+    """Store user data in Supabase"""
+    supabase.table("user_data").insert({"email": email, "data": data}).execute()
+
+# Authentication flow
+auth_code = st.experimental_get_query_params().get("code")
+if auth_code:
+    user_info = get_google_user_info(auth_code[0])
+    if user_info:
+        email = user_info["email"]
+        st.session_state["user"] = email
+        st.success(f"Welcome, {email}!")
+        
+        # User input
+        user_data = st.text_area("Enter some data:")
+        if st.button("Submit"):
+            store_user_data(email, user_data)
+            st.success("Data saved successfully!")
 else:
-    st.success(f"Welcome, {st.session_state.user['email']}!")
-    
-    # Add additional content here for authenticated users
-    st.write("You're logged in and can now access additional features.")
-
-    # Logout button
-    if st.button("Logout"):
-        logout_user()
+    st.markdown(f"[Login with Google]({GOOGLE_AUTH_URL})")
