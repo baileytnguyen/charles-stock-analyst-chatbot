@@ -26,7 +26,7 @@ def login_with_google():
     """Function to log in a user using Google."""
     try:
         # Redirect to Google login
-        url = supabase.auth.sign_in_with_provider("google")
+        url = supabase.auth.signInWithOAuth("google")
         st.write("Please log in using the following link:")
         st.markdown(f"[Login with Google]({url})")
     except Exception as e:
