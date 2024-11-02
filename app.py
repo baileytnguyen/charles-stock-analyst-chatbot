@@ -11,7 +11,7 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_API_KEY = os.getenv("SUPABASE_API_KEY")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-REDIRECT_URI = "ttps://friendlyuta-charles-app-register-login-authenticate-depl-grfpvj.streamlit.app/auth/v1/callback"
+REDIRECT_URI = "https://friendlyuta-charles-app-register-login-authenticate-depl-grfpvj.streamlit.app/auth/v1/callback"
 
 # Initialize Supabase client
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_API_KEY)
