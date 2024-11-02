@@ -53,8 +53,10 @@ def store_user_data(email, data):
     """Store user data in Supabase"""
     supabase.table("user_data").insert({"email": email, "data": data}).execute()
 
-# Authentication flow
-auth_code = st.experimental_get_query_params().get("code")
+
+# Get the authorization code from the query parameters
+auth_code = st.query_params.get("code")
+
 if auth_code:
     user_info = get_google_user_info(auth_code[0])
     if user_info:
