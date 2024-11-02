@@ -74,6 +74,7 @@ auth_code = st.query_params.get("code")
 if auth_code:
     # Clear query params to avoid re-triggering
     st.experimental_set_query_params()
+    st.experimental_rerun()
     
     # Debugging: Check if auth code is retrieved
     st.write("Auth code:", auth_code)
