@@ -11,7 +11,7 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_API_KEY = os.getenv("SUPABASE_API_KEY")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-REDIRECT_URI = "https://friendlyuta-charles-app-register-login-authenticate-depl-grfpvj.streamlit.app/auth/v1/callback"
+REDIRECT_URI = "https://your-username-your-app-name.streamlit.app/auth/v1/callback"  # Replace with your Streamlit app URL
 
 # Initialize Supabase client
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_API_KEY)
@@ -44,6 +44,10 @@ def get_google_user_info(auth_code):
     token_json = token_response.json()
     access_token = token_json.get("access_token")
 
+    if not access_token:
+        st.error("Failed to retrieve access token.")
+        return None
+
     # Step 2: Retrieve user info
     headers = {"Authorization": f"Bearer {access_token}"}
     user_info_response = requests.get(user_info_url, headers=headers)
@@ -53,18 +57,20 @@ def store_user_data(email, data):
     """Store user data in Supabase"""
     supabase.table("user_data").insert({"email": email, "data": data}).execute()
 
-
-# Get the authorization code from the query parameters
+# Authentication flow
 auth_code = st.query_params.get("code")
-
 if auth_code:
+    # Clear query params to avoid re-triggering
+    st.experimental_set_query_params()
+
+    # Retrieve user information using the auth code
     user_info = get_google_user_info(auth_code[0])
     if user_info:
         email = user_info["email"]
         st.session_state["user"] = email
         st.success(f"Welcome, {email}!")
         
-        # User input
+        # User input section
         user_data = st.text_area("Enter some data:")
         if st.button("Submit"):
             store_user_data(email, user_data)
