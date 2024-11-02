@@ -20,6 +20,8 @@ SCOPE = "openid email profile"
 # Initialize OAuth component
 oauth2 = OAuth2Component(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, AUTHORIZATION_URL, TOKEN_URL, TOKEN_URL, REVOKE_URL)
 
+if 'rerun' not in st.session_state:
+    st.session_state['rerun'] = False
 
 
 # OAuth flow
@@ -32,9 +34,11 @@ if 'token' not in st.session_state:
     )
     
     if result:
-        # Store the token in session state and rerun
-        st.session_state.token = result.get('token')
-        st.experimental_rerun()
+        # Store the token in session state
+        st.session_state['token'] = result.get('token')
+        # Trigger a rerun
+        st.session_state['rerun'] = not st.session_state['rerun']
+        
 else:
     # Display user content when logged in
     st.success("You are logged in!")
