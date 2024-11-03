@@ -1,9 +1,7 @@
 import streamlit as st
-import auth
+from st_paywall import add_auth
+
+add_auth(required=False)
 
 if __name__ == '__main__':
-    st.title("Streamlit OAuth Login")
-    st.write(auth.get_login_str(), unsafe_allow_html=True)
-
-    if st.button("Display User"):  
-        auth.display_user()
+    st.title("Charles AI")
