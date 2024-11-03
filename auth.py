@@ -10,16 +10,16 @@ load_dotenv()
 
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
-REDIRECT_URI = os.getenv("REDIRECT_URI")
+REDIRECT_URL = os.getenv("REDIRECT_URL")
 
 # Initialize the Google OAuth2 client
 client = GoogleOAuth2(CLIENT_ID, CLIENT_SECRET)
 
 async def get_authorization_url():
-    return await client.get_authorization_url(REDIRECT_URI, scope=["profile", "email"])
+    return await client.get_authorization_url(REDIRECT_URL, scope=["profile", "email"])
 
 async def get_access_token(code: str):
-    return await client.get_access_token(code, REDIRECT_URI)
+    return await client.get_access_token(code, REDIRECT_URL)
 
 async def get_user_email(token: str):
     user_id, user_email = await client.get_id_email(token)
