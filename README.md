@@ -6,5 +6,5 @@ To set-up the project you will need to do the following steps locally:
 3. Create the virtual environment using the following command: python -m venv charles
 4. Activate the virtual environment using the following command: charles\Scripts\activate
 5. Download the .ENV file, ensure is named .ENV, from our Teams Agile Group Project and paste at the top level directory 
-6. Intall the following dependencies using the following command: pip install streamlit supabase python-dotenv
+6. Intall the following dependencies using the following command: pip install streamlit supabase python-dotenv bcrypt matplotlib openai
 7. To run the web server enter the following command: streamlit run app.py
