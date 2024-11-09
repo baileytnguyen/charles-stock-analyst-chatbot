@@ -21,11 +21,13 @@ openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 st.title("Charles - Stock Charting Assistant")
 
+
 # Helper function to stream a message with a delay
 def stream_message(message, delay=0.05):
     for word in message.split():
         yield word + " "
         time.sleep(delay)
+
 
 # Charles greeting emulator
 def response_generator():
@@ -37,6 +39,7 @@ def response_generator():
         ]
     )
     return response
+
 
 # Initialize chat history
 if "messages" not in st.session_state:
@@ -54,14 +57,23 @@ if len(st.session_state.messages) == 0:
         st.write_stream(stream_message(response))
         st.session_state.messages.append({"role": "assistant", "content": response})
 
+
 def get_response(user_prompt):
+    prepropmt = """You are Charles, a help assistant that can ONLY chart stocks and 
+    add/change/remove requested common indicators to be overlayed. 
+    For now provide only the stock ticker for the given input and only give the ticker. 
+    Nothing else."""
+
     response = OpenAI().chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": "You are Charles, a help assistant that can ONLY chart stocks and add/change/remove requested common indicators to be overlayed. For now provide only the stock ticker for the given input and only give the ticker. Nothing else."},
+            {
+                "role": "system",
+                "content": prepropmt,
+            },
             {"role": "user", "content": user_prompt},
         ],
-        stream=True
+        stream=True,
     )
 
     for chunk in response:
@@ -69,16 +81,24 @@ def get_response(user_prompt):
         if content:
             yield content
 
+
 # Function to fetch stock data from Polygon API using URL
-def fetch_stock_data(ticker, timespan="day", multiplier=1, limit=100, from_date="2024-01-01", to_date=None):
+def fetch_stock_data(
+    ticker,
+    timespan="day",
+    multiplier=1,
+    limit=100,
+    from_date="2024-01-01",
+    to_date=None,
+):
     if not to_date:
         to_date = datetime.now().strftime("%Y-%m-%d")
-    
+
     url = (
         f"https://api.polygon.io/v2/aggs/ticker/{ticker}/range/{multiplier}/{timespan}/{from_date}/{to_date}"
         f"?adjusted=true&sort=asc&limit={limit}&apiKey={POLYGON_API_KEY}"
     )
-    
+
     response = requests.get(url)
     data = response.json()
 
@@ -87,17 +107,20 @@ def fetch_stock_data(ticker, timespan="day", multiplier=1, limit=100, from_date=
         st.error("Error fetching stock data")
         return pd.DataFrame()
 
-    return pd.DataFrame([
-        {
-            "Date": datetime.fromtimestamp(item["t"] / 1000),
-            "Open": item["o"],
-            "High": item["h"],
-            "Low": item["l"],
-            "Close": item["c"],
-            "Volume": item["v"]
-        }
-        for item in data["results"]
-    ]).set_index("Date")
+    return pd.DataFrame(
+        [
+            {
+                "Date": datetime.fromtimestamp(item["t"] / 1000),
+                "Open": item["o"],
+                "High": item["h"],
+                "Low": item["l"],
+                "Close": item["c"],
+                "Volume": item["v"],
+            }
+            for item in data["results"]
+        ]
+    ).set_index("Date")
+
 
 # Accept user input
 if prompt := st.chat_input("How can I help you?"):
@@ -109,23 +132,23 @@ if prompt := st.chat_input("How can I help you?"):
     # Initialize empty list to collect the assistant's response
     collected_messages = []
     ai_response = get_response(prompt)
-    
+
     # Collect all response chunks
     for chunk in ai_response:
         collected_messages.append(chunk)  # Append each chunk to the list
 
     # Join collected messages into a single string
-    full_ai_response = ''.join(collected_messages)
-    
+    full_ai_response = "".join(collected_messages)
+
     # Display the full response at once
     with st.chat_message("assistant"):
         st.write_stream(stream_message(full_ai_response))
-    
+
     # Add assistant response to chat history
     st.session_state.messages.append({"role": "assistant", "content": full_ai_response})
 
     # Extract stock ticker from the assistant's response
-    ticker = ''.join(e for e in full_ai_response if e.isalnum()).upper()
+    ticker = "".join(e for e in full_ai_response if e.isalnum()).upper()
 
     # Fetch stock data
     stock_data = fetch_stock_data(ticker=ticker)
@@ -139,7 +162,7 @@ if prompt := st.chat_input("How can I help you?"):
             title=f"{ticker} Stock Price",
             ylabel="Price",
             volume=True,
-            returnfig=True
+            returnfig=True,
         )
 
         # Display the plot in Streamlit
