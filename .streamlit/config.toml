@@ -1,6 +1,9 @@
 [client]
+
 showErrorDetails = true
 showSidebarNavigation = false
+
+
 
 [theme]
 
@@ -20,6 +23,8 @@ secondaryBackgroundColor = '#808080'
 # Accepted values (serif | sans serif | monospace) 
 # Default: "sans serif"
 font = "sans serif"
+
+
 
 [logger]
 
