@@ -13,6 +13,12 @@ from openai import OpenAI
 import indicators.calculations as calc
 
 
+# Display Navigation Links at the Top of the Page
+st.sidebar.header("Navigation")
+if st.sidebar.button("Home"):
+    st.switch_page("pages/home.py")
+
+
 # Load environment variables
 load_dotenv()
 
