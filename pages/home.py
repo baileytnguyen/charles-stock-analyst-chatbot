@@ -65,7 +65,7 @@ def home_page():
             if is_subscribed:
                 if st.button("Unsubscribe"):
                     # Redirect to the unsubscribe page if clicked
-                    st.switch_page("unsubscribeUser")  # The page name should match the configured TOML entry
+                    st.switch_page("pages/unsubscribeUser.py")  # The page name should match the configured TOML entry
        
         except Exception as e:
             # Display an error if there was an issue fetching subscription status
@@ -76,7 +76,7 @@ def home_page():
         if st.button("Logout"):
             # Reset logged-in state and redirect to login page
             st.session_state.logged_in = False
-            st.switch_page("login")  # The page name should match the configured TOML entry
+            st.switch_page("pages/login.py")  # The page name should match the configured TOML entry
     
     else:
         # Display error if user is not authenticated
