@@ -10,11 +10,8 @@ from datetime import datetime
 from openai import OpenAI
 
 # Import indicator calculation functions
-from indicators.calculations import (
-    calculate_sma, calculate_ema, calculate_rsi,
-    calculate_macd, calculate_adx, calculate_atr,
-    calculate_bollinger_bands, calculate_obv
-)
+import indicators.calculations as calc
+
 
 # Load environment variables
 load_dotenv()
@@ -36,14 +33,17 @@ if "current_indicators" not in st.session_state:
     
 # Mapping of indicator names to calculation functions
 indicator_functions = {
-    "SMA": calculate_sma,
-    "EMA": calculate_ema,
-    "RSI": calculate_rsi,
-    "MACD": calculate_macd,
-    "ADX": calculate_adx,
-    "ATR": calculate_atr,
-    "Bollinger Bands": calculate_bollinger_bands,
-    "OBV": calculate_obv,
+    "SMA": calc.calculate_sma,
+    "EMA": calc.calculate_ema,
+    "RSI": calc.calculate_rsi,
+    "MACD": calc.calculate_macd,
+    "ADX": calc.calculate_adx,
+    "ATR": calc.calculate_atr,
+    "Bollinger Bands": calc.calculate_bollinger_bands,
+    "OBV": calc.calculate_obv,
+    "DMI": calc.calculate_dmi,
+    "Parabolic SAR": calc.calculate_parabolic_sar,
+    "VROC": calc.calculate_vroc,
 }
 
 # Configuration dictionary for each indicator's style
@@ -56,6 +56,9 @@ indicator_config = {
     "ATR": {"color": "magenta", "style": "dashed", "panel": 1},
     "Bollinger Bands": {"color": "purple", "style": "solid", "panel": 0, "bands": True},
     "OBV": {"color": "orange", "style": "solid", "panel": 1},
+    "DMI": {"color": "blue", "style": "dashed", "panel": 1},
+    "Parabolic SAR": {"color": "green", "style": "solid", "panel": 1},
+    "VROC": {"color": "orange", "style": "solid", "panel": 1},
 }
 
 # Page heading
@@ -190,7 +193,69 @@ def plot_indicators(ticker, stock_data, indicators):
         				"volume": False,          # Exclude volume from the main chart
         			}
                     
-                # Handle individual indicators that are plotted independently
+                    
+                # Special handling for MACD, requires the histogram, signal line and MACD line
+                elif indicator == "MACD":
+                    
+                    # Calculate the MACD components
+                    macd_line, signal_line, histogram = calc.calculate_macd(stock_data)
+                    
+                    # Check if MACD calculation succeeded
+                    if macd_line is not None and signal_line is not None and histogram is not None:
+                        # Add the three components to the plot
+                        mpf_kwargs = {
+                            "type": "line",
+                            "style": "charles",
+                            "title": f"{ticker} {indicator}",
+                            "ylabel": "Price (USD)",
+                            "addplot": [
+                                mpf.make_addplot(macd_line, panel=panel, color="blue", label="MACD Line", secondary_y=False),
+                                mpf.make_addplot(signal_line, panel=panel, color="red", label="Signal Line", secondary_y=False),
+                                mpf.make_addplot(histogram, panel=panel, type="bar", color="grey", label="Histogram", secondary_y=False)
+                            ],
+                            "volume": False,
+                        }                       
+                        
+                    else:
+                        st.warning("MACD components could not be calculated for the plot.")
+                        
+                        
+                # Plotting Parabolic SAR Indicator
+                elif indicator == "Parabolic SAR":
+                    
+                    # Calculate the Parabolic SAR values for the stock data
+                    sar = calc.calculate_parabolic_sar(stock_data)
+                    
+                    mpf_kwargs = {
+                        "type": "line",
+                        "style": "charles",
+                        "title": f"{ticker} {indicator}",
+                        "ylabel": "Price (USD)",
+                        "addplot": [
+                            mpf.make_addplot(sar, type='scatter', markersize=5, marker='.', color='red'),
+                        ],
+                        "volume": False,
+                    }
+                        
+                    
+                # Plotting Directional Movement Index (DMI) Indicator
+                elif indicator == "DMI":
+                    
+                    # Calculate +DI and -DI values for Directional Movement Index
+                    plus_di, minus_di = calc.calculate_dmi(stock_data)
+                    
+                    mpf_kwargs = {
+                        "type": "line",
+                        "style": "charles",
+                        "title": f"{ticker} DMI (+DI / -DI)",
+                        "addplot": [
+                            mpf.make_addplot(plus_di, panel=config["panel"], color=config["color"], label="+DI"),
+                            mpf.make_addplot(minus_di, panel=config["panel"], color="red", label="-DI"),
+                        ]
+                    }
+
+                    
+                # Handle all other individual indicators that are plotted independently
                 else:
                     
                     # Assign the calculated indicator values to a DataFrame column if they match the data length
