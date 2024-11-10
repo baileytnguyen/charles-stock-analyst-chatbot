@@ -39,7 +39,7 @@ def login_page():
                 if (isSubscribed.data[0]["isSubscribed"]):
                     st.switch_page("pages/stocks.py")
                 else :
-                    st.switch_page("pages/subscribe.py")
+                    st.switch_page("pages/subscribeUser.py")
             else:
                 st.error("Incorrect Credentials.")
         else:
