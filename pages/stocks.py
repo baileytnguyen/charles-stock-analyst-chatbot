@@ -177,8 +177,151 @@ def plot_indicators(ticker, stock_data, indicators):
                 linestyle = config.get("style", "solid")
                 panel = config.get("panel", 1)
                 
+                # Simple Moving Average
+                if indicator == "SMA":
+                    
+                    # Generate SMAs with different time periods and add them to the stock_data DataFrame
+                    stock_data['SMA_5'] = calc.calculate_sma(stock_data, period=5)
+                    stock_data['SMA_10'] = calc.calculate_sma(stock_data, period=10)
+                    stock_data['SMA_20'] = calc.calculate_sma(stock_data, period=20)
+                    stock_data['SMA_50'] = calc.calculate_sma(stock_data, period=50)
+                    stock_data['SMA_100'] = calc.calculate_sma(stock_data, period=100)
+                    stock_data['SMA_200'] = calc.calculate_sma(stock_data, period=200)
+                    
+                    # Check if the 5, 10, and 20-day SMAs have valid data (i.e., not all NaN/None)
+                    if (not(stock_data['SMA_5'].isnull().all()) and
+                        not(stock_data['SMA_10'].isnull().all()) and
+                        not(stock_data['SMA_20'].isnull().all())):
+                    
+                        # Define plotting parameters for 5, 10, and 20-day SMAs
+                        mpf_kwargs = {
+            				"type": "line",  
+            				"style": "charles",
+            				"title": f"{ticker} 5, 10, and 20-day SMAs",
+            				"ylabel": "Price (USD)",
+            				"addplot": [
+                                mpf.make_addplot(stock_data['SMA_5'], color="blue", label="5-day SMA"),
+                                mpf.make_addplot(stock_data['SMA_10'], color="green", label="10-day SMA"),
+                                mpf.make_addplot(stock_data['SMA_20'], color="red", label="20-day SMA"),
+                            ],
+            				"volume": False,
+            			}
+                        
+            			# Plot the 5, 10, and 20-day SMAs
+                        fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
+                        st.pyplot(fig)
+                        
+                    # Check if the 50 and 100-day SMAs have valid data
+                    if (not(stock_data['SMA_50'].isnull().all()) and
+                        not(stock_data['SMA_100'].isnull().all())):
+                    
+                        # Define plotting parameters for 50 and 100-day SMAs
+                        mpf_kwargs = {
+            				"type": "line",  
+            				"style": "charles",
+            				"title": f"{ticker} 50 and 100-day SMAs",
+            				"ylabel": "Price (USD)",
+            				"addplot": [
+                                mpf.make_addplot(stock_data['SMA_50'], color="purple", label="50-day SMA"),
+                                mpf.make_addplot(stock_data['SMA_100'], color="orange", label="100-day SMA"),
+                            ],
+            				"volume": False,
+            			}
+                        
+            			# Plot the 50 and 100-day SMAs
+                        fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
+                        st.pyplot(fig)
+                        
+                    # Separate display for 200-day SMA if it has valid data
+                    if (not(stock_data['SMA_200'].isnull().all())):      
+                    
+                        # Define plotting parameters for the 200-day SMA
+                        mpf_kwargs = {
+            				"type": "line",  
+            				"style": "charles",
+            				"title": f"{ticker} 200-day SMA",
+            				"ylabel": "Price (USD)",
+            				"addplot": [
+                                mpf.make_addplot(stock_data['SMA_200'], color="brown", label="200-day SMA"),
+                            ],
+            				"volume": False,
+            			}
+                        
+            			# Plot the 200-day SMA
+                        fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
+                        st.pyplot(fig)
+
+                # Exponential Moving Average
+                elif indicator == "EMA":
+                    
+                    # Generate EMAs with specified time periods
+                    stock_data['EMA_12'] = calc.calculate_ema(stock_data, period=12)
+                    stock_data['EMA_26'] = calc.calculate_ema(stock_data, period=26)
+                    stock_data['EMA_50'] = calc.calculate_ema(stock_data, period=50)
+                    stock_data['EMA_200'] = calc.calculate_ema(stock_data, period=200)
+                
+                    # Check if the 12 and 26-day EMAs have valid data
+                    if (not stock_data['EMA_12'].isnull().all() and 
+                        not stock_data['EMA_26'].isnull().all()):
+                        
+                        # Define plotting parameters for 12 and 26-day EMAs
+                        mpf_kwargs = {
+                            "type": "line",
+                            "style": "charles",
+                            "title": f"{ticker} 12 and 26-day EMAs",
+                            "ylabel": "Price (USD)",
+                            "addplot": [
+                                mpf.make_addplot(stock_data['EMA_12'], color="blue", label="12-day EMA"),
+                                mpf.make_addplot(stock_data['EMA_26'], color="green", label="26-day EMA"),
+                            ],
+                            "volume": False,
+                        }
+                
+                        # Plot the 12 and 26-day EMAs
+                        fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
+                        st.pyplot(fig)
+                    
+                    # Check if the 50-day EMA has valid data
+                    if (not stock_data['EMA_50'].isnull().all()):
+                        
+                        # Define plotting parameters for the 50-day EMA
+                        mpf_kwargs = {
+                            "type": "line",
+                            "style": "charles",
+                            "title": f"{ticker} 50-day EMA",
+                            "ylabel": "Price (USD)",
+                            "addplot": [
+                                mpf.make_addplot(stock_data['EMA_50'], color="purple", label="50-day EMA"),
+                            ],
+                            "volume": False,
+                        }
+                
+                        # Plot the 50-day EMA
+                        fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
+                        st.pyplot(fig)
+                    
+                    # Check if the 200-day EMA has valid data
+                    if (not stock_data['EMA_200'].isnull().all()):
+                        
+                        # Define plotting parameters for the 200-day EMA
+                        mpf_kwargs = {
+                            "type": "line",
+                            "style": "charles",
+                            "title": f"{ticker} 200-day EMA",
+                            "ylabel": "Price (USD)",
+                            "addplot": [
+                                mpf.make_addplot(stock_data['EMA_200'], color="brown", label="200-day EMA"),
+                            ],
+                            "volume": False,
+                        }
+                
+                        # Plot the 200-day EMA
+                        fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
+                        st.pyplot(fig)
+
+                
                 # Special handling for Bollinger Bands, which has upper and lower bands
-                if indicator == "Bollinger Bands":
+                elif indicator == "Bollinger Bands":
                     
                     if isinstance(indicator_values, tuple) and len(indicator_values) == 2:
                         stock_data['BB_upper'], stock_data['BB_lower'] = indicator_values
@@ -198,6 +341,10 @@ def plot_indicators(ticker, stock_data, indicators):
         				],
         				"volume": False,          # Exclude volume from the main chart
         			}
+                    
+        			# Plot the indicator chart
+                    fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
+                    st.pyplot(fig)
                     
                     
                 # Special handling for MACD, requires the histogram, signal line and MACD line
@@ -220,7 +367,11 @@ def plot_indicators(ticker, stock_data, indicators):
                                 mpf.make_addplot(histogram, panel=panel, type="bar", color="grey", label="Histogram", secondary_y=False)
                             ],
                             "volume": False,
-                        }                       
+                        }
+                        
+            			# Plot the indicator chart
+                        fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
+                        st.pyplot(fig)
                         
                     else:
                         st.warning("MACD components could not be calculated for the plot.")
@@ -242,6 +393,10 @@ def plot_indicators(ticker, stock_data, indicators):
                         ],
                         "volume": False,
                     }
+                    
+        			# Plot the indicator chart
+                    fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
+                    st.pyplot(fig)
                         
                     
                 # Plotting Directional Movement Index (DMI) Indicator
@@ -259,6 +414,10 @@ def plot_indicators(ticker, stock_data, indicators):
                             mpf.make_addplot(minus_di, panel=config["panel"], color="red", label="-DI"),
                         ]
                     }
+                    
+        			# Plot the indicator chart
+                    fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
+                    st.pyplot(fig)
 
                     
                 # Handle all other individual indicators that are plotted independently
@@ -282,10 +441,11 @@ def plot_indicators(ticker, stock_data, indicators):
         				],
         				"volume": False,
         			}
-        
-     			# Plot the indicator chart
-                fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
-                st.pyplot(fig)
+                    
+        			# Plot the indicator chart
+                    fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
+                    st.pyplot(fig)
+    
                     
             except Exception as e:
                 st.error(f"Error plotting {indicator} for {ticker}: {e}")
