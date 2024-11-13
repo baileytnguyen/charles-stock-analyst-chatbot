@@ -13,11 +13,6 @@ from openai import OpenAI
 import indicators.calculations as calc
 
 
-# Display Navigation Links at the Top of the Page
-st.sidebar.header("Navigation")
-if st.sidebar.button("Home"):
-    st.switch_page("pages/home.py")
-
 
 # Load environment variables
 load_dotenv()
@@ -29,6 +24,8 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # Set OpenAI API key from Streamlit secrets
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
+
+
 # Initialize session state for storing the current ticker and indicators need for
 # maintaining history since the OpenAI API does not store session history
 if "current_ticker" not in st.session_state:
@@ -39,36 +36,48 @@ if "current_indicators" not in st.session_state:
     
 # Mapping of indicator names to calculation functions
 indicator_functions = {
-    "SMA": calc.calculate_sma,
-    "EMA": calc.calculate_ema,
-    "RSI": calc.calculate_rsi,
-    "MACD": calc.calculate_macd,
-    "ADX": calc.calculate_adx,
-    "ATR": calc.calculate_atr,
-    "Bollinger Bands": calc.calculate_bollinger_bands,
-    "OBV": calc.calculate_obv,
-    "DMI": calc.calculate_dmi,
-    "Parabolic SAR": calc.calculate_parabolic_sar,
-    "VROC": calc.calculate_vroc,
+    "sma": calc.calculate_sma,
+    "ema": calc.calculate_ema,
+    "rsi": calc.calculate_rsi,
+    "macd": calc.calculate_macd,
+    "adx": calc.calculate_adx,
+    "atr": calc.calculate_atr,
+    "bollinger bands": calc.calculate_bollinger_bands,
+    "obv": calc.calculate_obv,
+    "dmi": calc.calculate_dmi,
+    "parabolic sar": calc.calculate_parabolic_sar,
+    "vroc": calc.calculate_vroc,
 }
 
 # Configuration dictionary for each indicator's style
 indicator_config = {
-    "SMA": {"color": "blue", "style": "solid", "panel": 0},
-    "EMA": {"color": "green", "style": "solid", "panel": 0},
-    "RSI": {"color": "red", "style": "dashed", "panel": 1},
-    "MACD": {"color": "purple", "style": "solid", "panel": 1},
-    "ADX": {"color": "cyan", "style": "dotted", "panel": 1},
-    "ATR": {"color": "magenta", "style": "dashed", "panel": 1},
-    "Bollinger Bands": {"color": "purple", "style": "solid", "panel": 0, "bands": True},
-    "OBV": {"color": "orange", "style": "solid", "panel": 1},
-    "DMI": {"color": "blue", "style": "dashed", "panel": 1},
-    "Parabolic SAR": {"color": "green", "style": "solid", "panel": 1},
-    "VROC": {"color": "orange", "style": "solid", "panel": 1},
+    "sma": {"color": "blue", "style": "solid", "panel": 0},
+    "ema": {"color": "green", "style": "solid", "panel": 0},
+    "rsi": {"color": "red", "style": "solid", "panel": 1},
+    "macd": {"color": "purple", "style": "solid", "panel": 1},
+    "adx": {"color": "green", "style": "solid", "panel": 1},
+    "atr": {"color": "magenta", "style": "solid", "panel": 1},
+    "bollinger bands": {"color": "purple", "style": "solid", "panel": 0, "bands": True},
+    "obv": {"color": "orange", "style": "solid", "panel": 1},
+    "dmi": {"color": "blue", "style": "solid", "panel": 1},
+    "parabolic sar": {"color": "green", "style": "solid", "panel": 1},
+    "vroc": {"color": "orange", "style": "solid", "panel": 1},
 }
 
 # Page heading
 st.title("Charles - Stock Charting Assistant")
+
+# Display Navigation Links at the Top of the Page
+st.sidebar.header("Navigation")
+if st.sidebar.button("Home"):
+    st.switch_page("pages/home.py")
+    
+# Add an expandable section for available indicators
+with st.sidebar.expander("Available Indicators"):
+    for indicator_name in indicator_functions.keys():        
+        st.write(indicator_name.upper())
+        
+        
 
 # Helper function to stream a message with a delay
 def stream_message(message, delay=0.05):
@@ -140,18 +149,23 @@ def plot_indicators(ticker, stock_data, indicators):
     - None, displays plots using Streamlit
     """
     
-    # Remove any empty strings from the indicators list
-    indicators = [indicator for indicator in indicators if indicator.strip()]
+    # Remove any empty strings or "None" entries from the indicators list
+    indicators = [indicator for indicator in indicators if indicator.strip() and indicator != "None"]
+    
+    
+    if (indicators):
+        # Convert indicators to lowercase for case-insensitive checking
+        indicators = [indicator.lower() for indicator in indicators]
 
     # Determine whether to plot volume or close price based on indicators
-    volume_requested = "Volume" in indicators
-    price_requested = "Candlestick" in indicators or "Price" in indicators or not indicators  # Default to close price if no indicator
+    volume_requested = "volume" in indicators
+    price_requested = "candlestick" in indicators or "price" in indicators or not indicators  # Default to close price if no indicator
 
     # Plot the main stock price chart
     if price_requested:
         
         mpf_kwargs = {
-            "type": "candle" if "Candlestick" in indicators else "line",
+            "type": "candle" if "candlestick" in indicators else "line",
             "style": "charles",
             "title": f"{ticker} Stock Price",
             "ylabel": "Price (USD)",
@@ -165,7 +179,7 @@ def plot_indicators(ticker, stock_data, indicators):
     for indicator in indicators:
         
         # Ensure the indicator is defined in the functions and skip Volume
-        if indicator in indicator_functions and indicator != "Volume":
+        if indicator in indicator_functions and indicator != "volume":
             
             try:
                 # Calculate the indicator values
@@ -178,7 +192,7 @@ def plot_indicators(ticker, stock_data, indicators):
                 panel = config.get("panel", 1)
                 
                 # Simple Moving Average
-                if indicator == "SMA":
+                if indicator == "sma":
                     
                     # Generate SMAs with different time periods and add them to the stock_data DataFrame
                     stock_data['SMA_5'] = calc.calculate_sma(stock_data, period=5)
@@ -252,7 +266,7 @@ def plot_indicators(ticker, stock_data, indicators):
                         st.pyplot(fig)
 
                 # Exponential Moving Average
-                elif indicator == "EMA":
+                elif indicator == "ema":
                     
                     # Generate EMAs with specified time periods
                     stock_data['EMA_12'] = calc.calculate_ema(stock_data, period=12)
@@ -321,7 +335,7 @@ def plot_indicators(ticker, stock_data, indicators):
 
                 
                 # Special handling for Bollinger Bands, which has upper and lower bands
-                elif indicator == "Bollinger Bands":
+                elif indicator == "bollinger bands":
                     
                     if isinstance(indicator_values, tuple) and len(indicator_values) == 2:
                         stock_data['BB_upper'], stock_data['BB_lower'] = indicator_values
@@ -333,11 +347,11 @@ def plot_indicators(ticker, stock_data, indicators):
                     mpf_kwargs = {
         				"type": "line",
         				"style": "charles",
-        				"title": f"{ticker} {indicator}",
+        				"title": f"{ticker} Bollinger Bands",
         				"ylabel": "Price (USD)",
         				"addplot": [
-                            mpf.make_addplot(stock_data['BB_upper'], panel=panel, color=color, linestyle="--", label=f"{indicator} Upper Band"),
-                            mpf.make_addplot(stock_data['BB_lower'], panel=panel, color=color, linestyle="--", label=f"{indicator} Lower Band"),
+                            mpf.make_addplot(stock_data['BB_upper'], panel=panel, color=color, linestyle="--", label="Upper Band"),
+                            mpf.make_addplot(stock_data['BB_lower'], panel=panel, color=color, linestyle="--", label="Lower Band"),
         				],
         				"volume": False,          # Exclude volume from the main chart
         			}
@@ -348,7 +362,7 @@ def plot_indicators(ticker, stock_data, indicators):
                     
                     
                 # Special handling for MACD, requires the histogram, signal line and MACD line
-                elif indicator == "MACD":
+                elif indicator == "macd":
                     
                     # Calculate the MACD components
                     macd_line, signal_line, histogram = calc.calculate_macd(stock_data)
@@ -359,7 +373,7 @@ def plot_indicators(ticker, stock_data, indicators):
                         mpf_kwargs = {
                             "type": "line",
                             "style": "charles",
-                            "title": f"{ticker} {indicator}",
+                            "title": f"{ticker} MACD",
                             "ylabel": "Price (USD)",
                             "addplot": [
                                 mpf.make_addplot(macd_line, panel=panel, color="blue", label="MACD Line", secondary_y=False),
@@ -378,7 +392,7 @@ def plot_indicators(ticker, stock_data, indicators):
                         
                         
                 # Plotting Parabolic SAR Indicator
-                elif indicator == "Parabolic SAR":
+                elif indicator == "parabolic sar":
                     
                     # Calculate the Parabolic SAR values for the stock data
                     sar = calc.calculate_parabolic_sar(stock_data)
@@ -386,7 +400,7 @@ def plot_indicators(ticker, stock_data, indicators):
                     mpf_kwargs = {
                         "type": "line",
                         "style": "charles",
-                        "title": f"{ticker} {indicator}",
+                        "title": f"{ticker} Parabolic SAR",
                         "ylabel": "Price (USD)",
                         "addplot": [
                             mpf.make_addplot(sar, type='scatter', markersize=5, marker='.', color='red'),
@@ -400,7 +414,7 @@ def plot_indicators(ticker, stock_data, indicators):
                         
                     
                 # Plotting Directional Movement Index (DMI) Indicator
-                elif indicator == "DMI":
+                elif indicator == "dmi":
                     
                     # Calculate +DI and -DI values for Directional Movement Index
                     plus_di, minus_di = calc.calculate_dmi(stock_data)
@@ -428,16 +442,16 @@ def plot_indicators(ticker, stock_data, indicators):
                         stock_data[indicator] = indicator_values
                         
                     else:
-                        st.warning(f"{indicator} calculation mismatch for {ticker}. Skipping plot.")
+                        st.warning(f"{indicator.upper()} calculation mismatch for {ticker}. Skipping plot.")
                         continue
                     
                     mpf_kwargs = {
         				"type": "line",  
         				"style": "charles",
-        				"title": f"{ticker} {indicator}",
+        				"title": f"{ticker} {indicator.upper()}",
         				"ylabel": "Price (USD)",
         				"addplot": [
-        					mpf.make_addplot(stock_data[indicator], panel=panel, color=color, linestyle=linestyle, label=f"{indicator}", ylabel=indicator)  # Separate panel with custom ylabel
+        					mpf.make_addplot(stock_data[indicator], panel=panel, color=color, linestyle=linestyle, label=f"{indicator.upper()}", ylabel=indicator.upper())  # Separate panel with custom ylabel
         				],
         				"volume": False,
         			}
@@ -448,7 +462,7 @@ def plot_indicators(ticker, stock_data, indicators):
     
                     
             except Exception as e:
-                st.error(f"Error plotting {indicator} for {ticker}: {e}")
+                st.error(f"Error plotting {indicator.upper()} for {ticker}: {e}")
                 continue
 
     # Plot volume chart as a standalone panel if requested
