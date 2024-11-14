@@ -50,8 +50,6 @@ if confirm_unsubscribe:
         if response: 
             st.success("You have successfully unsubscribed. We hope to see you again!")
             time.sleep(2)  # Optional: Delay before redirecting
-            st.session_state.is_trial = True  # Re-enable trial mode
-            st.session_state.trial_counter = 0  # Reset trial counter
             st.switch_page("pages/home.py")  # Redirect to home or a specific page after unsubscribing
         else:
             st.error("There was an error while processing your unsubscribe request. Please try again later.")

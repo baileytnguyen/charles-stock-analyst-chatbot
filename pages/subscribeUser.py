@@ -143,9 +143,9 @@ if st.button("Confirm Subscription"):
         response = (supabase.table("User").update({"isSubscribed": True}).eq("email", st.session_state.email).execute())
         st.success("Subscription successful! Redirecting to the Home Screen!")
         end_trial(st.session_state['email'])
-        # Sleep 3 seconds before redirecting to login screen
+        # Sleep 3 seconds before redirecting to home screen
         time.sleep(3)
-        st.switch_page("pages/stocks.py")
+        st.switch_page("pages/home.py")
 
 
 
