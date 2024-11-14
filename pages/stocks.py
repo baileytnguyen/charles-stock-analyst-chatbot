@@ -1,22 +1,37 @@
 import streamlit as st
-from dotenv import load_dotenv
 import os
 import time
 import random
 import indicators.plot as plot
+from supabase import create_client, Client
 from openai import OpenAI
+from dotenv import load_dotenv
 
 
 
 # Load environment variables
 load_dotenv()
 
-# Replace this with your actual OpenAI API key
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_API_KEY = os.getenv("SUPABASE_API_KEY")
 
 # Set OpenAI API key from Streamlit secrets
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_API_KEY)
 
+
+# Fetch user data from Supabase
+user_data_response = supabase.from_("User").select("*").eq("email", st.session_state['email']).execute()
+
+# Check if data retrieval was successful and data is present
+if user_data_response.data and len(user_data_response.data) > 0:
+    # Access the first item in the result list
+    user_data = user_data_response.data[0]  
+else:
+    st.error("User data not found.")
+    
+    
 
 # Initialize session state for storing the current ticker and indicators need for
 # maintaining history since the OpenAI API does not store session history
@@ -27,6 +42,7 @@ if "current_indicators" not in st.session_state:
     st.session_state.current_indicators = []
     
 
+
 # Page heading
 st.title("Charles - Stock Charting Assistant")
 
@@ -34,6 +50,22 @@ st.title("Charles - Stock Charting Assistant")
 st.sidebar.header("Navigation")
 if st.sidebar.button("Home"):
     st.switch_page("pages/home.py")
+    
+# Check if the user is on a trial or not subscribed
+if user_data["isTrial"] or not user_data["isSubscribed"]:
+    if user_data["isTrial"]:
+        st.sidebar.write("You are currently on a trial.")
+    if st.sidebar.button("Subscribe for Full Access"):
+        st.switch_page("pages/subscribeUser.py")
+        
+        
+# Display 'Logout' button
+if st.sidebar.button("Logout"):
+    # Reset logged-in state and redirect to login page
+    st.session_state.logged_in = False
+    st.switch_page("pages/login.py")  # The page name should match the configured TOML entry
+
+
     
 # Add an expandable section for available indicators
 with st.sidebar.expander("Available Indicators"):
@@ -159,17 +191,35 @@ if len(st.session_state.messages) == 0:
         st.write_stream(stream_message(response))
         st.session_state.messages.append({"role": "assistant", "content": response})
 
-# Accept user input
-if prompt := st.chat_input("How can I help you?"):
+# If the user is on trial and there are no more free requests remaining prevent the user
+# from being able to use charles
+if (user_data["isTrial"] and user_data['trialRequestsLeft'] == 0):
+    st.write("You have run out of free requests on your trial. Subscribe to continue using.")
+    supabase.table("User").update({"trialEnded": True}).eq("email", st.session_state.email).execute()
     
-    # Add user message to chat history
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    # Get response and update indicators
-    ticker, indicators = get_response(prompt)
+elif (user_data["trialEnded"] and not user_data["isSubscribed"]):
+    st.write("Subscribe to use Charles you are currently not subscribed")
     
-    # Refresh the chart with the latest indicators
-    plot.plot_current_indicators(ticker, indicators) 
+else:
 
+    # Accept user input
+    if prompt := st.chat_input("How can I help you?"):
+        
+        # Add user message to chat history
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+    
+        # Get response and update indicators
+        ticker, indicators = get_response(prompt)
+        
+        # Refresh the chart with the latest indicators
+        plot.plot_current_indicators(ticker, indicators) 
+        
+        if (user_data["isTrial"]):
+            supabase.table("User").update({"trialRequestsLeft": user_data["trialRequestsLeft"] - 1}).eq("email", st.session_state['email']).execute()
+            user_data_response = supabase.from_("User").select("*").eq("email", st.session_state['email']).execute()
+            if user_data_response.data and len(user_data_response.data) > 0:
+                user_data = user_data_response.data[0]
+                # Update the displayed requests remaining
+                st.sidebar.write(f"Number of free requests remaining: {user_data['trialRequestsLeft']}")
