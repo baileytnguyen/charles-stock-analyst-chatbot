@@ -56,13 +56,15 @@ def plot_current_indicators(ticker, indicators):
         # Fetch stock data for the specified ticker
         stock_data = fetch.fetch_stock_data(ticker)
         
+        timespan = st.session_state.current_timespan
+        
         # Check if fetched data is empty, indicating an issue with data retrieval
         if stock_data.empty:
             st.error("No data available for the specified ticker.")
             
         else:
             # Plot the indicators on the fetched stock data
-            plot_indicators(ticker, stock_data, indicators)
+            plot_indicators(ticker, stock_data, indicators, timespan=timespan)
             
     else:
         # Display an error if no ticker is set
