@@ -72,7 +72,7 @@ def plot_current_indicators(ticker, indicators):
 
 
 
-def plot_indicators(ticker, stock_data, indicators):
+def plot_indicators(ticker, stock_data, indicators, timespan):
     """
     Plots the main stock price and specified technical indicators for the given ticker symbol.
     
