@@ -33,6 +33,9 @@ if "current_ticker" not in st.session_state:
     
 if "current_indicators" not in st.session_state:
     st.session_state.current_indicators = []
+
+if "current_timespan" not in st.session_state:
+    st.session_state.current_timespan = "day"
     
 # Mapping of indicator names to calculation functions
 indicator_functions = {
@@ -64,6 +67,8 @@ indicator_config = {
     "vroc": {"color": "orange", "style": "solid", "panel": 1},
 }
 
+available_timespans = ["hour", "day", "week", "month", "quarter", "year"]
+
 # Page heading
 st.title("Charles - Stock Charting Assistant")
 
@@ -77,7 +82,10 @@ with st.sidebar.expander("Available Indicators"):
     for indicator_name in indicator_functions.keys():        
         st.write(indicator_name.upper())
         
-        
+# Add an expandable section for available indicators
+with st.sidebar.expander("Available Timespans"):
+    for timespan in available_timespans:        
+        st.write(timespan.capitalize())
 
 # Helper function to stream a message with a delay
 def stream_message(message, delay=0.05):
@@ -115,12 +123,13 @@ def plot_current_indicators():
     # Retrieve the current ticker and indicators from session state
     ticker = st.session_state.current_ticker
     indicators = st.session_state.current_indicators
+    timespan = st.session_state.current_timespan
 
     # Check if a ticker is set in session state
     if ticker:
         
         # Fetch stock data for the specified ticker
-        stock_data = fetch_stock_data(ticker)
+        stock_data = fetch_stock_data(ticker, timespan=timespan)
         
         # Check if fetched data is empty, indicating an issue with data retrieval
         if stock_data.empty:
@@ -503,6 +512,7 @@ def get_response(user_prompt):
     system_prompt = f"""You are a helpful assistant that manages stock information based on user requests.
     The current ticker is '{st.session_state.current_ticker or "None"}'.
     The current indicators are: {", ".join(st.session_state.current_indicators) if st.session_state.current_indicators else "None"}.
+    The current timespan is '{st.session_state.current_timespan}'.
     
     Your job:
     - Confirm the exact stock ticker symbol based on the user's input.
@@ -510,12 +520,13 @@ def get_response(user_prompt):
     - When asked to add or remove an indicator, respond with an updated list of indicators as follows:
       - If adding, include only the new indicator(s) requested.
       - If removing, exclude only the specified indicator(s).
+    - When asked to change the timespan, provide the new timespan only if it's part the supported timespan list which is "hour, day, week, month, quarter, year".
     
     Response format:
-    - Only provide 'Ticker: <ticker>' and 'Indicators: <indicator1>, <indicator2>, ...'.
-    - If the ticker symbol or indicator list does not change, keep the response consistent with the previous values.
+    - Only provide 'Ticker: <ticker>' and 'Indicators: <indicator1>, <indicator2>, ...' and 'Timespan: <timespan>'.
+    - If the ticker symbol or indicator list or timespan does not change, keep the response consistent with the previous values.
     
-    Strictly follow the above format, responding only with the ticker and indicators as specified, and no additional text or explanations.
+    Strictly follow the above format, responding only with the ticker and indicators and timeframe as specified, and no additional text or explanations.
     """
 
 
@@ -543,20 +554,25 @@ def get_response(user_prompt):
         
         content = response_dict['choices'][0].get('message', {}).get('content', "")
 
-        # Check for both 'Ticker' and 'Indicators' in the response to validate format
-        if "Ticker:" in content and "Indicators:" in content:
+        # Check for both 'Ticker' and 'Indicators' and 'Timespan' in the response to validate format
+        if "Ticker:" in content and "Indicators:" in content and "Timespan:" in content:
             
             # Extract and clean up the ticker
             ticker = content.split("Ticker:")[1].split("\n")[0].strip()
             
             # Extract and clean up the indicators, ensuring no empty strings
-            indicators = [ind.strip() for ind in content.split("Indicators:")[1].strip().split(",") if ind.strip()]
+            indicators = [indicator.strip() for indicator in content.split("Indicators:")[1].split("\n")[0].split(",") if indicator.strip()]
+
+            # Extract and clean up the timespan
+            timespan = content.split("Timespan:")[1].strip()
 
             # Update session state with the new ticker and indicators
             st.session_state.current_ticker = ticker
             st.session_state.current_indicators = indicators
+            st.session_state.current_timespan = timespan
 
-            return ticker, indicators
+            st.success(f"Ticker: {ticker}, Indicators: {', '.join(indicators)}, Timespan: {timespan}")
+            return ticker, indicators, timespan
 
         else:
             st.warning("Unexpected format in OpenAI response. Could not extract ticker and indicators.")
@@ -656,7 +672,7 @@ if prompt := st.chat_input("How can I help you?"):
         st.markdown(prompt)
 
     # Get response and update indicators
-    ticker, indicators = get_response(prompt)
+    ticker, indicators, timespan = get_response(prompt)
     
     # Refresh the chart with the latest indicators
     plot_current_indicators() 
