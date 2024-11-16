@@ -228,7 +228,7 @@ else:
         ticker, indicators, timespan = get_response(prompt)
         
         # Refresh the chart with the latest indicators
-        plot.plot_current_indicators(ticker, indicators) 
+        plot.plot_current_indicators(ticker, indicators, timespan) 
         
         if (user_data["isTrial"]):
             supabase.table("User").update({"trialRequestsLeft": user_data["trialRequestsLeft"] - 1}).eq("email", st.session_state['email']).execute()

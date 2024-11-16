@@ -11,7 +11,7 @@ POLYGON_API_KEY = os.getenv("POLYGON_API_KEY")
 
 
 # Function to fetch stock data from Polygon API using URL
-def fetch_stock_data(ticker, timespan="day", multiplier=1, limit=100, from_date="2024-01-01", to_date=None):
+def fetch_stock_data(ticker, timespan="day", multiplier=1, limit=365, from_date="2024-01-01", to_date=None):
     """
     Fetches stock data for a specified ticker from the Polygon API within a date range.
 
