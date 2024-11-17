@@ -31,19 +31,19 @@ def login_page():
 
         if user.data:
             stored_password = user.data[0]["password"]
+            
             if check_password(password, stored_password):
                 st.success("Login successful!")
-                st.session_state.logged_in = True
-                st.session_state.email = email
-                isSubscribed = supabase.from_("User").select("isSubscribed").eq("email", st.session_state.email).execute()
-                if (isSubscribed.data[0]["isSubscribed"]):
-                    st.switch_page("pages/stocks.py")
-                else :
-                    st.switch_page("pages/subscribeUser.py")
-            else:
-                st.error("Incorrect Credentials.")
-        else:
+                st.session_state['logged_in'] = True
+                st.session_state['email'] = email
+                 
+                st.switch_page("pages/home.py")  
+                
+            else:               
+                st.error("Incorrect Credentials.")             
+        else:            
             st.error("Incorrect Credentials.")
+            
     st.text("Need an account?")
 
     if st.button("Register"):

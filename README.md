@@ -24,11 +24,21 @@ You can specify one or more of the following indicators to view in a chart:
 - Parabolic SAR
 - VROC (Volume Rate of Change)
 
+You can specify one of the following timespans to view in a chart:
+- Hour
+- Day
+- Week
+- Month
+- Quarter
+- Year
+
 Here are some examples of prompts:
 I want to see Microsoft with the following indicators SMA, VROC, OBV, and DMI
 Remove DMI
 Add MACD
+Use Timespan of a Month
 Remove SMA
+Change Timespan to Week
 Remove MACD and OBV
 ..etc
 

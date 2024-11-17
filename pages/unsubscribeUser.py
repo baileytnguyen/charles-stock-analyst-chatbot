@@ -14,22 +14,25 @@ SUPABASE_API_KEY = os.getenv("SUPABASE_API_KEY")
 # Initialize the Supabase client
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_API_KEY)
 
+# Fetch user data from Supabase
+user_data_response = supabase.from_("User").select("*").eq("email", st.session_state['email']).execute()
+
+# Check if data retrieval was successful and data is present
+if user_data_response.data and len(user_data_response.data) > 0:
+    # Access the first item in the result list
+    user_data = user_data_response.data[0]  
+else:
+    st.error("User data not found.")
+
+
+
 # Set page configuration
 st.set_page_config(page_title="Charles Homepage", page_icon="💳", layout="centered")
 
-def get_username(user_id):
-    # Query the database to retrieve the name column based on user_id
-    response = supabase.table("user_data").select("first_name").eq("id", user_id).execute()
-    if response.data:
-        return response.data[0]["first_name"].strip()
-    return "User"
 
-# Fetch username (replace 'user_id' with actual logged-in user's ID)
-user_id = 1  # Example user ID; replace this with the actual user ID after login
-username = get_username(user_id)
 
 # Welcome message
-st.title(f"Goodbye, {username}!")
+st.title(f"Goodbye, {user_data['username']}!")
 st.write("You are about to unsubscribe from Charles.")
 
 # Confirmation prompt
@@ -47,7 +50,7 @@ if confirm_unsubscribe:
         if response: 
             st.success("You have successfully unsubscribed. We hope to see you again!")
             time.sleep(2)  # Optional: Delay before redirecting
-            st.switch_page("pages/login.py")  # Redirect to home or a specific page after unsubscribing
+            st.switch_page("pages/home.py")  # Redirect to home or a specific page after unsubscribing
         else:
             st.error("There was an error while processing your unsubscribe request. Please try again later.")
     
