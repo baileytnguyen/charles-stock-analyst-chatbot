@@ -207,14 +207,7 @@ if len(st.session_state.messages) == 0:
 
 # If the user is on trial and there are no more free requests remaining prevent the user
 # from being able to use charles
-if (user_data["isTrial"] and user_data['trialRequestsLeft'] == 0):
-    st.write("You have run out of free requests on your trial. Subscribe to continue using.")
-    supabase.table("User").update({"trialEnded": True}).eq("email", st.session_state.email).execute()
-    
-elif (user_data["trialEnded"] and not user_data["isSubscribed"]):
-    st.write("Subscribe to use Charles you are currently not subscribed")
-    
-else:
+if ((user_data["isTrial"] and user_data['trialRequestsLeft'] > 0) or user_data["isSubscribed"]):
 
     # Accept user input
     if prompt := st.chat_input("How can I help you?"):
@@ -237,3 +230,6 @@ else:
                 user_data = user_data_response.data[0]
                 # Update the displayed requests remaining
                 st.sidebar.write(f"Number of free requests remaining: {user_data['trialRequestsLeft']}")
+else:
+    st.write("Subscribe to use Charles you are currently not subscribed")
+    
