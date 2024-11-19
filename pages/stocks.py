@@ -211,7 +211,7 @@ if (user_data["isTrial"] and user_data['trialRequestsLeft'] == 0):
     st.write("You have run out of free requests on your trial. Subscribe to continue using.")
     supabase.table("User").update({"trialEnded": True}).eq("email", st.session_state.email).execute()
     
-elif (user_data["trialEnded"] or not user_data["isSubscribed"]):
+elif (user_data["trialEnded"] and not user_data["isSubscribed"]):
     st.write("Subscribe to use Charles you are currently not subscribed")
     
 else:
