@@ -9,6 +9,51 @@ from datetime import datetime
 POLYGON_API_KEY = os.getenv("POLYGON_API_KEY")
 
 
+# Function to fetch stock news
+def fetch_stock_news(ticker):
+    """
+    Fetches the latest news for a specified stock ticker from the Polygon API.
+
+    Parameters:
+    - ticker (str): Stock ticker symbol.
+
+    Returns:
+    - list: A list of dictionaries with news details (title, date, summary, etc.).
+    """
+    # Construct URL for Polygon API request
+    url = f"https://api.polygon.io/v2/reference/news?ticker={ticker}&apiKey={POLYGON_API_KEY}"
+
+    # Make request to Polygon API
+    try:
+        response = requests.get(url)
+        # Raise an error for unsuccessful status codes
+        response.raise_for_status()  
+        data = response.json()
+        
+    except requests.RequestException as e:
+        st.error(f"Error fetching stock news: {e}")
+        return []
+
+    # Validate response content
+    if "results" not in data:
+        st.error("No news results found in the API response.")
+        return []
+
+    # Parse and return news data
+    news_list = [{
+        "Title": item.get("title"),
+        "Published Date": item.get("published_utc"),
+        "Description": item.get("description"),
+        "Author": item.get("author"),
+        "Source Name": item["publisher"].get("name") if "publisher" in item else None,
+        "Source Logo URL": item["publisher"].get("logo_url") if "publisher" in item else None,
+        "Article URL": item.get("article_url"),
+        "Sentiment": item["insights"][0].get("sentiment") if item.get("insights") else None,
+        "Sentiment Reasoning": item["insights"][0].get("sentiment_reasoning") if item.get("insights") else None
+    } for item in data["results"]]
+    
+    return news_list
+
 
 # Function to fetch stock data from Polygon API using URL
 def fetch_stock_data(ticker, timespan="day", multiplier=1, limit=365, from_date="2024-01-01", to_date=None):
@@ -27,6 +72,7 @@ def fetch_stock_data(ticker, timespan="day", multiplier=1, limit=365, from_date=
     - pd.DataFrame: DataFrame with columns for "Open", "High", "Low", "Close", "Volume", and indexed by date.
       Returns an empty DataFrame if data retrieval fails or required columns are missing.
     """
+    
     
     # Set default end date to today if not provided
     if not to_date:
