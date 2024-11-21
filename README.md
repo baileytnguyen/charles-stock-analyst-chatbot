@@ -32,6 +32,12 @@ You can specify one of the following timespans to view in a chart:
 - Quarter
 - Year
 
+You can specify to see the stock's news as well:
+"Show news"
+"Add news"
+"Stop news"
+"Remove news"
+
 Here are some examples of prompts:
 I want to see Microsoft with the following indicators SMA, VROC, OBV, and DMI
 Remove DMI
