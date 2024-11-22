@@ -6,6 +6,7 @@ import re
 import indicators.plot as plot
 import polygon.data_fetcher as fetch
 import polygon.display_news as display_news
+import polygon.display_financials as display_financials
 from supabase import create_client, Client
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -36,8 +37,8 @@ else:
     
     
 
-# Initialize session state for storing the current ticker, indicators, timespan and
-# news needed for maintaining history since the OpenAI API does not store session history
+# Initialize session state for storing the current ticker, indicators, timespan,
+# news, and financials needed for maintaining history since the OpenAI API does not store session history
 if "current_ticker" not in st.session_state:
     st.session_state.current_ticker = None
     
@@ -49,6 +50,9 @@ if "current_timespan" not in st.session_state:
     
 if "current_news" not in st.session_state:
     st.session_state.current_news = "False"
+    
+if "current_financials" not in st.session_state:
+    st.session_state.current_financials = "False"
     
 available_timespans = ["hour", "day", "week", "month", "quarter", "year"]
 
@@ -66,16 +70,13 @@ if user_data["isTrial"] or not user_data["isSubscribed"]:
     if user_data["isTrial"]:
         st.sidebar.write("You are currently on a trial.")
     if st.sidebar.button("Subscribe for Full Access"):
-        st.switch_page("pages/subscribeUser.py")
-        
+        st.switch_page("pages/subscribeUser.py")       
         
 # Display 'Logout' button
 if st.sidebar.button("Logout"):
     # Reset logged-in state and redirect to login page
     st.session_state.logged_in = False
     st.switch_page("pages/login.py")  # The page name should match the configured TOML entry
-
-
     
 # Add an expandable section for available indicators
 with st.sidebar.expander("Available Indicators"):
@@ -109,18 +110,19 @@ def response_generator():
 # Use OpenAI API to parse stock ticker and indicator/s from user input
 def get_response(user_prompt):
     """
-    Uses the OpenAI API to parse a user’s input for stock-related information, including the ticker, indicators, timespan, and news preference.
+    Uses the OpenAI API to parse a user’s input for stock-related information, including the ticker, indicators, timespan, news, and financials preference.
     Updates the session state with the parsed values.
 
     Parameters:
     - user_prompt (str): The user's input containing the stock request and any indicators.
 
     Returns:
-    - tuple: (ticker, indicators, timespan, news), where:
+    - tuple: (ticker, indicators, timespan, news, financials), where:
         - ticker (str): The stock ticker symbol.
         - indicators (list): A list of requested indicators.
         - timespan (str): The requested timespan (e.g., 'hour', 'day').
         - news (str): 'True', 'False', or None based on the user's preference for news updates.
+        - financials (str): 'True', 'False', or None based on the user's preference for financials updates.
         - Returns (None, [], None, None) if parsing fails or no response is provided.
     """
     
@@ -130,6 +132,7 @@ def get_response(user_prompt):
     The current indicators are: {", ".join(st.session_state.current_indicators) if st.session_state.current_indicators else "None"}.
     The current timespan is '{st.session_state.current_timespan}'.
     The current news is '{st.session_state.current_news}'.
+    The current financials is '{st.session_state.current_financials}'.
     
     Your job:
     - Confirm the exact stock ticker symbol based on the user's input.
@@ -139,10 +142,12 @@ def get_response(user_prompt):
       - If removing, exclude only the specified indicator(s).
     - When asked to change the timespan, provide the new timespan only if it's part the supported timespan list which is "hour, day, week, month, quarter, year".
     - When asked to show or add news then return True. If asked to stop or remove news then return False. Otherwise, use the current news value to return
+    - When asked to show or add financials then return True. If asked to stop or remove financials then return False. Otherwise, use the current financials value to return
+
     
     Response format:
-    - Only provide 'Ticker: <ticker>' and 'Indicators: <indicator1>, <indicator2>, ...' and 'Timespan: <timespan>' and 'News: <news>'.
-    - If the ticker symbol or indicator list or timespan or news does not change, keep the response consistent with the previous values.
+    - Only provide 'Ticker: <ticker>' and 'Indicators: <indicator1>, <indicator2>, ...' and 'Timespan: <timespan>' and 'News: <news>' and 'Financials: <financials>'.
+    - If the ticker symbol or indicator list or timespan or news or financials does not change, keep the response consistent with the previous values.
     
     Strictly follow the above format, responding only with the ticker and indicators and timeframe and news as specified, and no additional text or explanations.
     """
@@ -164,7 +169,7 @@ def get_response(user_prompt):
         return None, []
 
 
-    # Parse response content to update ticker, indicators, timespan, and news
+    # Parse response content to update ticker, indicators, timespan, news, and financials
     response_dict = response.to_dict() if hasattr(response, 'to_dict') else response
     
     # Ensure that response contains the expected structure
@@ -190,15 +195,20 @@ def get_response(user_prompt):
             # Extract News
             news_match = re.search(r"News:\s*(True|False)", content)
             news = news_match.group(1) if news_match else None
+            
+            # Extract Financials
+            financials_match = re.search(r"Financials:\s*(True|False)", content)
+            financials = financials_match.group(1) if news_match else None
 
             # Update session state
             st.session_state.current_ticker = ticker
             st.session_state.current_indicators = indicators
             st.session_state.current_timespan = timespan
             st.session_state.current_news = news
+            st.session_state.current_financials = financials
 
-            st.success(f"Ticker: {ticker}, Indicators: {', '.join(indicators)}, Timespan: {timespan}, News: {news}")
-            return ticker, indicators, timespan, news
+            st.success(f"Ticker: {ticker}, Indicators: {', '.join(indicators)}, Timespan: {timespan}, News: {news}, Financials: {financials}")
+            return ticker, indicators, timespan, news, financials
 
         else:
             st.warning("Unexpected format in OpenAI response. Could not extract values.")
@@ -236,14 +246,21 @@ if ((user_data["isTrial"] and user_data['trialRequestsLeft'] > 0) or user_data["
             st.markdown(prompt)
     
         # Get response and update indicators
-        ticker, indicators, timespan, news = get_response(prompt)
+        ticker, indicators, timespan, news, financials = get_response(prompt)
         
         # Get news for the given stock if requested
         if (news == "True"):             
             # Fetch the stock news from polygon
-            news = fetch.fetch_stock_news(ticker)
+            news_data = fetch.fetch_stock_news(ticker)
             # Display the news in streamlit
-            display_news.display_stock_news(news)
+            display_news.display_stock_news(news_data, ticker)
+            
+        # Get financials for the given stock if requested
+        if (financials == "True"):
+            # Fetch the stock financials from polygon
+            financials_data = fetch.fetch_financials(ticker)
+            # Display the financials in streamlit
+            display_financials.display_financial_statements(financials_data, ticker)            
         
         # Refresh the chart with the latest indicators
         plot.plot_current_indicators(ticker, indicators, timespan) 

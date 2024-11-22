@@ -9,6 +9,38 @@ from datetime import datetime
 POLYGON_API_KEY = os.getenv("POLYGON_API_KEY")
 
 
+def fetch_financials(ticker):
+    """
+    Fetch financial data for a specific stock ticker from the Polygon API and display it.
+
+    Parameters:
+    - ticker (str): The stock ticker for which to fetch financial data.
+    """
+    
+    # Construct URL for Polygon API request
+    url = f"https://api.polygon.io/vX/reference/financials?ticker={ticker}&timeframe=quarterly&include_sources=false&apiKey={POLYGON_API_KEY}"
+    
+    # Make request to Polygon API
+    try:
+        response = requests.get(url)
+        # Raise an error for unsuccessful status codes
+        response.raise_for_status()  
+        data = response.json()
+        
+    except requests.RequestException as e:
+        st.error(f"Error fetching stock earnings: {e}")
+        return []
+    
+    # Validate response content
+    if "results" not in data or not data["results"]:
+        st.error("No financial data found in the API response.")
+        return
+    
+    financials = data["results"]
+    
+    return financials
+
+
 # Function to fetch stock news
 def fetch_stock_news(ticker):
     """

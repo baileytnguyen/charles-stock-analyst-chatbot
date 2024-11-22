@@ -1,13 +1,17 @@
 import streamlit as st
 from datetime import datetime
 
-def display_stock_news(news_list):
+def display_stock_news(news_list, ticker):
     """
     Displays the stock news in a readable format on the Streamlit webserver.
 
     Parameters:
     - news_list (list): A list of dictionaries containing news details.
     """
+    
+    # Add a main title
+    st.title(f"{ticker} News")
+    
     if not news_list:
         st.write("No news available for this stock.")
         return
