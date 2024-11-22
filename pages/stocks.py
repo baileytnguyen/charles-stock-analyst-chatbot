@@ -166,7 +166,7 @@ def get_response(user_prompt):
         
     except Exception as e:
         st.error(f"Error communicating with OpenAI API: {e}")
-        return None, []
+        return None, [], None, None, None
 
 
     # Parse response content to update ticker, indicators, timespan, news, and financials
@@ -214,7 +214,7 @@ def get_response(user_prompt):
             st.warning("Unexpected format in OpenAI response. Could not extract values.")
 
     # Return None and empty list if parsing fails
-    return None, [], None, None
+    return None, [], None, None, None
             
 
 # Initialize chat history

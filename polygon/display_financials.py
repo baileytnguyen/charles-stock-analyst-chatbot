@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-# Helper functions to process each financial statement
+
 def create_financial_table(financials, statement_type):
     """
     Create a Pandas DataFrame for a specific financial statement.
