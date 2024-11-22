@@ -38,6 +38,13 @@ You can specify to see the stock's news as well:
 "Stop news"
 "Remove news"
 
+You can specify to see the stock's financials as well:
+"Show financials"
+"Add financials"
+"Stop financials"
+"Remove financials"
+
+
 Here are some examples of prompts:
 I want to see Microsoft with the following indicators SMA, VROC, OBV, and DMI
 Remove DMI
