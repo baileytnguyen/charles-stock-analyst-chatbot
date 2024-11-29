@@ -106,6 +106,59 @@ def response_generator():
     )
     return response
             
+# Friendly response generator for updates
+def generate_update_response(ticker=None, indicators=None, timespan=None, news=None, financials=None):
+    """
+    Generates a friendly response message based on the values that have actually changed.
+    Combines messages for multiple updates to improve conversational flow.
+    """
+    changes = []
+
+    # Detect changes and add to the changes list
+    if ticker and ticker != st.session_state.current_ticker:
+        changes.append(f"ticker to {ticker}")
+    if indicators and sorted(indicators) != sorted(st.session_state.current_indicators):
+        changes.append(f"indicators to {', '.join(indicators)}")
+    if timespan and timespan != st.session_state.current_timespan:
+        changes.append(f"timespan to {timespan}")
+    if news is not None and news != st.session_state.current_news:
+        if news == "True":
+            changes.append("including the latest news")
+        else:
+            changes.append("removing news updates")
+    if financials is not None and financials != st.session_state.current_financials:
+        if financials == "True":
+            changes.append("adding financial data")
+        else:
+            changes.append("skipping financial data")
+
+    # Combine messages based on the number of changes
+    if len(changes) == 1:
+        response = f"Got it! Updating the {changes[0]}."
+    elif len(changes) == 2:
+        response = f"Absolutely! Updating the {changes[0]} and {changes[1]}."
+    elif len(changes) > 2:
+        response = f"All set! Updating the {', '.join(changes[:-1])}, and {changes[-1]}."
+    else:
+        response = "Nothing has changed."
+
+    # If the user requested news and the ticker is provided, include that response
+    if ticker and news == "True":
+        response = f"Certainly, here is the news for {ticker}. {response}"
+
+    # List of random closing statements
+    closing_statements = [
+        "Let me know how I can help!",
+        "What else can I do for you?",
+        "Feel free to ask if you need anything else.",
+        "Happy to assist, let me know if you need more updates!",
+        "Let me know if you'd like to make further changes."
+    ]
+
+    # Add a random closing statement to the response
+    response += " " + random.choice(closing_statements)
+
+    return response
 
 # Use OpenAI API to parse stock ticker and indicator/s from user input
 def get_response(user_prompt):
@@ -146,10 +199,10 @@ def get_response(user_prompt):
 
     
     Response format:
-    - Only provide 'Ticker: <ticker>' and 'Indicators: <indicator1>, <indicator2>, ...' and 'Timespan: <timespan>' and 'News: <news>' and 'Financials: <financials>'.
+    - Provide 'Ticker: <ticker>' and 'Indicators: <indicator1>, <indicator2>, ...' and 'Timespan: <timespan>' and 'News: <news>' and 'Financials: <financials>'.
     - If the ticker symbol or indicator list or timespan or news or financials does not change, keep the response consistent with the previous values.
     
-    Strictly follow the above format, responding only with the ticker and indicators and timeframe and news as specified, and no additional text or explanations.
+    Strictly follow the above format, responding with the ticker and indicators and timeframe and news as specified, also providing a positive, friendly manner.
     """
 
 
@@ -200,12 +253,26 @@ def get_response(user_prompt):
             financials_match = re.search(r"Financials:\s*(True|False)", content)
             financials = financials_match.group(1) if news_match else None
 
+            # Generate a friendly response
+            update_message = generate_update_response(
+                ticker=ticker,
+                indicators=indicators,
+                timespan=timespan,
+                news=news,
+                financials=financials,
+            )
+            
             # Update session state
             st.session_state.current_ticker = ticker
             st.session_state.current_indicators = indicators
             st.session_state.current_timespan = timespan
             st.session_state.current_news = news
             st.session_state.current_financials = financials
+
+            # Display the response in the chat
+            with st.chat_message("assistant"):
+                st.write_stream(stream_message(update_message))
+                st.session_state.messages.append({"role": "assistant", "content": update_message})
 
             st.success(f"Ticker: {ticker}, Indicators: {', '.join(indicators)}, Timespan: {timespan}, News: {news}, Financials: {financials}")
             return ticker, indicators, timespan, news, financials
@@ -215,7 +282,8 @@ def get_response(user_prompt):
 
     # Return None and empty list if parsing fails
     return None, [], None, None, None
-            
+
+ 
 
 # Initialize chat history
 if "messages" not in st.session_state:
