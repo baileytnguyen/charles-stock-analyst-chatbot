@@ -199,10 +199,10 @@ def get_response(user_prompt):
 
     
     Response format:
-    - Only provide 'Ticker: <ticker>' and 'Indicators: <indicator1>, <indicator2>, ...' and 'Timespan: <timespan>' and 'News: <news>' and 'Financials: <financials>'.
+    - Provide 'Ticker: <ticker>' and 'Indicators: <indicator1>, <indicator2>, ...' and 'Timespan: <timespan>' and 'News: <news>' and 'Financials: <financials>'.
     - If the ticker symbol or indicator list or timespan or news or financials does not change, keep the response consistent with the previous values.
     
-    Strictly follow the above format, responding only with the ticker and indicators and timeframe and news as specified, and no additional text or explanations.
+    Strictly follow the above format, responding with the ticker and indicators and timeframe and news as specified, also providing a positive, friendly manner.
     """
 
 
@@ -261,13 +261,18 @@ def get_response(user_prompt):
                 news=news,
                 financials=financials,
             )
-
+            
             # Update session state
             st.session_state.current_ticker = ticker
             st.session_state.current_indicators = indicators
             st.session_state.current_timespan = timespan
             st.session_state.current_news = news
             st.session_state.current_financials = financials
+
+            # Display the response in the chat
+            with st.chat_message("assistant"):
+                st.write_stream(stream_message(update_message))
+                st.session_state.messages.append({"role": "assistant", "content": update_message})
 
             st.success(f"Ticker: {ticker}, Indicators: {', '.join(indicators)}, Timespan: {timespan}, News: {news}, Financials: {financials}")
             return ticker, indicators, timespan, news, financials
@@ -277,7 +282,8 @@ def get_response(user_prompt):
 
     # Return None and empty list if parsing fails
     return None, [], None, None, None
-            
+
+ 
 
 # Initialize chat history
 if "messages" not in st.session_state:
