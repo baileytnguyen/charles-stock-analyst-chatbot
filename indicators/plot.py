@@ -102,27 +102,21 @@ def plot_indicators(ticker, stock_data, indicators):
 
     # Determine whether to plot volume or close price based on indicators
     volume_requested = "volume" in indicators
-    price_requested = "candlestick" in indicators or "price" in indicators or not indicators  # Default to close price if no indicator
 
-    # Plot the main stock price chart
-    if price_requested:
-        
-        mpf_kwargs = {
-            "type": "candle" if "candlestick" in indicators else "line",
-            "style": "charles",
-            "title": f"{ticker} Stock Price",
-            "ylabel": "Price (USD)",
-            "volume": False,  # Volume will be plotted separately if requested
-        }
-        fig, ax = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
-        st.pyplot(fig)
-        
+    mpf_kwargs = {
+        "type": "candle", # Default to candlestick chart
+        "style": "charles",
+        "title": f"{ticker}",
+        "ylabel": "Price (USD)",
+        "addplot": [],
+        "volume": False, # Default to not showing volume
+    }
 
-    # Loop through indicators to plot each as a separate chart
+    # Loop through indicators and plot them on the stock data
     for indicator in indicators:
         
-        # Ensure the indicator is defined in the functions and skip Volume
-        if indicator in indicator_functions and indicator != "volume":
+        # Ensure the indicator is defined in the functions
+        if indicator in indicator_functions:
             
             try:
                 # Calculate the indicator values
@@ -135,7 +129,11 @@ def plot_indicators(ticker, stock_data, indicators):
                 panel = config.get("panel", 1)
                 
                 # Simple Moving Average
-                if indicator == "sma":
+                if volume_requested:
+                    # Change volume flag to true
+                    mpf_kwargs["volume"] = True
+
+                elif indicator == "sma":
                     
                     sma_plotted = False
                     
@@ -153,68 +151,27 @@ def plot_indicators(ticker, stock_data, indicators):
                         validate_data(stock_data['SMA_20'])):
                         
                         sma_plotted = True
-                    
-                        # Define plotting parameters for 5, 10, and 20 period SMAs
-                        mpf_kwargs = {
-            				"type": "candle",  
-            				"style": "charles",
-            				"title": f"{ticker} 5, 10, and 20 period SMAs",
-            				"ylabel": "Price (USD)",
-            				"addplot": [
-                                mpf.make_addplot(stock_data['SMA_5'], color="blue", label="5 period SMA"),
-                                mpf.make_addplot(stock_data['SMA_10'], color="green", label="10 period SMA"),
-                                mpf.make_addplot(stock_data['SMA_20'], color="red", label="20 period SMA"),
-                            ],
-            				"volume": False,
-            			}
                         
-            			# Plot the 5, 10, and 20 period SMAs
-                        fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
-                        st.pyplot(fig)
+            			# Add the 5, 10, and 20 period SMAs to the plot
+                        mpf_kwargs["addplot"].append(mpf.make_addplot(stock_data['SMA_5'], color="blue", label="5 period SMA"))
+                        mpf_kwargs["addplot"].append(mpf.make_addplot(stock_data['SMA_10'], color="green", label="10 period SMA"))
+                        mpf_kwargs["addplot"].append(mpf.make_addplot(stock_data['SMA_20'], color="red", label="20 period SMA"))
                         
                     # Check if the 50 and 100 period SMAs have valid data
                     if (validate_data(stock_data['SMA_50']) and
                         validate_data(stock_data['SMA_100'])):
-                        
                         sma_plotted = True
-                    
-                        # Define plotting parameters for 50 and 100 period SMAs
-                        mpf_kwargs = {
-            				"type": "candle",  
-            				"style": "charles",
-            				"title": f"{ticker} 50 and 100 period SMAs",
-            				"ylabel": "Price (USD)",
-            				"addplot": [
-                                mpf.make_addplot(stock_data['SMA_50'], color="purple", label="50 period SMA"),
-                                mpf.make_addplot(stock_data['SMA_100'], color="orange", label="100 period SMA"),
-                            ],
-            				"volume": False,
-            			}
                         
-            			# Plot the 50 and 100 period SMAs
-                        fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
-                        st.pyplot(fig)
+            			# Add the 50 and 100 period SMAs to the plot
+                        mpf_kwargs["addplot"].append(mpf.make_addplot(stock_data['SMA_50'], color="purple", label="50 period SMA"))
+                        mpf_kwargs["addplot"].append(mpf.make_addplot(stock_data['SMA_100'], color="orange", label="100 period SMA"))
                         
                     # Separate display for 200 period SMA if it has valid data
                     if (validate_data(stock_data['SMA_200'])):  
-                        
                         sma_plotted = True
-                    
-                        # Define plotting parameters for the 200 period SMA
-                        mpf_kwargs = {
-            				"type": "candle",  
-            				"style": "charles",
-            				"title": f"{ticker} 200 period SMA",
-            				"ylabel": "Price (USD)",
-            				"addplot": [
-                                mpf.make_addplot(stock_data['SMA_200'], color="brown", label="200 period SMA"),
-                            ],
-            				"volume": False,
-            			}
                         
-            			# Plot the 200 period SMA
-                        fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
-                        st.pyplot(fig)
+            			# Add the 200 period SMA to the plot
+                        mpf_kwargs["addplot"].append(mpf.make_addplot(stock_data['SMA_200'], color="brown", label="200 period SMA"))
                         
                     # If none of the SMA's were plotted and the indicator was requested then report a warning
                     elif (not sma_plotted):
@@ -234,67 +191,25 @@ def plot_indicators(ticker, stock_data, indicators):
                     # Check if the 12 and 26 period EMAs have valid data
                     if (validate_data(stock_data['EMA_12']) and
                         validate_data(stock_data['EMA_26'])):
-                        
                         ema_plotted = True
-                        
-                        # Define plotting parameters for 12 and 26 period EMAs
-                        mpf_kwargs = {
-                            "type": "candle",
-                            "style": "charles",
-                            "title": f"{ticker} 12 and 26 period EMAs",
-                            "ylabel": "Price (USD)",
-                            "addplot": [
-                                mpf.make_addplot(stock_data['EMA_12'], color="blue", label="12 period EMA"),
-                                mpf.make_addplot(stock_data['EMA_26'], color="green", label="26 period EMA"),
-                            ],
-                            "volume": False,
-                        }
                 
-                        # Plot the 12 and 26 period EMAs
-                        fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
-                        st.pyplot(fig)
+                        # Add the 12 and 26 period EMAs to the plot
+                        mpf_kwargs["addplot"].append(mpf.make_addplot(stock_data['EMA_12'], color="blue", label="12 period EMA"))
+                        mpf_kwargs["addplot"].append(mpf.make_addplot(stock_data['EMA_26'], color="green", label="26 period EMA"))
                     
                     # Check if the 50 period EMA has valid data
                     if (validate_data(stock_data['EMA_50'])):  
-                        
                         ema_plotted = True
-                        
-                        # Define plotting parameters for the 50 period EMA
-                        mpf_kwargs = {
-                            "type": "candle",
-                            "style": "charles",
-                            "title": f"{ticker} 50 period EMA",
-                            "ylabel": "Price (USD)",
-                            "addplot": [
-                                mpf.make_addplot(stock_data['EMA_50'], color="purple", label="50 period EMA"),
-                            ],
-                            "volume": False,
-                        }
                 
-                        # Plot the 50 period EMA
-                        fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
-                        st.pyplot(fig)
+                        # Add the 50 period EMA to the plot
+                        mpf_kwargs["addplot"].append(mpf.make_addplot(stock_data['EMA_50'], color="purple", label="50 period EMA"))
                     
                     # Check if the 200 period EMA has valid data
                     if (validate_data(stock_data['EMA_200'])): 
-                        
                         ema_plotted = True
-                        
-                        # Define plotting parameters for the 200 period EMA
-                        mpf_kwargs = {
-                            "type": "candle",
-                            "style": "charles",
-                            "title": f"{ticker} 200 period EMA",
-                            "ylabel": "Price (USD)",
-                            "addplot": [
-                                mpf.make_addplot(stock_data['EMA_200'], color="orange", label="200 period EMA"),
-                            ],
-                            "volume": False,
-                        }
                 
-                        # Plot the 200 period EMA
-                        fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
-                        st.pyplot(fig)
+                        # Add the 200 period EMA to the plot
+                        mpf_kwargs["addplot"].append(mpf.make_addplot(stock_data['EMA_200'], color="orange", label="200 period EMA"))
                         
                     # If none of the EMA's were plotted and the indicator was requested then report a warning
                     elif (not ema_plotted):
@@ -314,23 +229,11 @@ def plot_indicators(ticker, stock_data, indicators):
                     # Check if the stock data has data
                     if (validate_data(stock_data['BB_upper']) and
                         validate_data(stock_data['BB_lower'])):
-                    
-                        mpf_kwargs = {
-            				"type": "line",
-            				"style": "charles",
-            				"title": f"{ticker} Bollinger Bands",
-            				"ylabel": "Price (USD)",
-            				"addplot": [
-                                mpf.make_addplot(stock_data['BB_upper'], panel=panel, color=color, linestyle="--", label="Upper Band"),
-                                mpf.make_addplot(stock_data['BB_lower'], panel=panel, color=color, linestyle="--", label="Lower Band"),
-            				],
-            				"volume": False,          # Exclude volume from the main chart
-            			}
                         
-            			# Plot the indicator chart
-                        fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
-                        st.pyplot(fig)
-                        
+                        # Add the Bollinger Bands to the plot
+                        mpf_kwargs["addplot"].append(mpf.make_addplot(stock_data['BB_upper'], panel=panel, color=color, linestyle="--", label="Upper Band"))
+                        mpf_kwargs["addplot"].append(mpf.make_addplot(stock_data['BB_lower'], panel=panel, color=color, linestyle="--", label="Lower Band"))
+                            
                     else:
                         st.warning(f"Cannot plot {indicator.upper()} due to insufficient data")
                     
@@ -346,24 +249,10 @@ def plot_indicators(ticker, stock_data, indicators):
                         validate_data(signal_line) and
                         validate_data(histogram)):
                         
-                        # Add the three components to the plot
-                        mpf_kwargs = {
-                            "type": "line",
-                            "style": "charles",
-                            "title": f"{ticker} MACD",
-                            "ylabel": "Price (USD)",
-                            "addplot": [
-                                mpf.make_addplot(macd_line, panel=panel, color="blue", label="MACD Line", secondary_y=False),
-                                mpf.make_addplot(signal_line, panel=panel, color="red", label="Signal Line", secondary_y=False),
-                                mpf.make_addplot(histogram, panel=panel, type="bar", color="grey", label="Histogram", secondary_y=False)
-                            ],
-                            "volume": False,
-                        }
-                        
-            			# Plot the indicator chart
-                        fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
-                        st.pyplot(fig)
-                        
+                        # Add the MACD chart to the plot
+                        mpf_kwargs["addplot"].append(mpf.make_addplot(macd_line, panel=panel, color="blue", label="MACD Line", secondary_y=False))
+                        mpf_kwargs["addplot"].append(mpf.make_addplot(signal_line, panel=panel, color="red", label="Signal Line", secondary_y=False))
+                        mpf_kwargs["addplot"].append(mpf.make_addplot(histogram, panel=panel, type="bar", color="grey", label="Histogram", secondary_y=False))
                     else:
                         st.warning(f"Cannot plot {indicator.upper()} due to insufficient data")
                         
@@ -376,21 +265,9 @@ def plot_indicators(ticker, stock_data, indicators):
                     
                     # Check if the stock data has data
                     if (validate_data(sar)): 
-                    
-                        mpf_kwargs = {
-                            "type": "line",
-                            "style": "charles",
-                            "title": f"{ticker} Parabolic SAR",
-                            "ylabel": "Price (USD)",
-                            "addplot": [
-                                mpf.make_addplot(sar, type='scatter', markersize=5, marker='.', color='red'),
-                            ],
-                            "volume": False,
-                        }
                         
-            			# Plot the indicator chart
-                        fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
-                        st.pyplot(fig)
+                        # Add the Parabolic SAR values to the plot
+                        mpf_kwargs["addplot"].append(mpf.make_addplot(sar, type='scatter', markersize=5, marker='.', color='red'))
                         
                     else:
                         st.warning(f"Cannot plot {indicator.upper()} due to insufficient data")
@@ -406,25 +283,14 @@ def plot_indicators(ticker, stock_data, indicators):
                     if (validate_data(plus_di) and
                         validate_data(minus_di)):
                     
-                        mpf_kwargs = {
-                            "type": "line",
-                            "style": "charles",
-                            "title": f"{ticker} DMI (+DI / -DI)",
-                            "addplot": [
-                                mpf.make_addplot(plus_di, panel=config["panel"], color=config["color"], label="+DI"),
-                                mpf.make_addplot(minus_di, panel=config["panel"], color="red", label="-DI"),
-                            ]
-                        }
-                        
-            			# Plot the indicator chart
-                        fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
-                        st.pyplot(fig)
-                        
+                        # Add the +DI and -DI values to the plot
+                        mpf_kwargs["addplot"].append(mpf.make_addplot(plus_di, panel=config["panel"], color=config["color"], label="+DI"))
+                        mpf_kwargs["addplot"].append(mpf.make_addplot(minus_di, panel=config["panel"], color="red", label="-DI"))
                     else:
                         st.warning(f"Cannot plot {indicator.upper()} due to insufficient data")
 
                     
-                # Handle all other individual indicators that are plotted independently
+                # Handle all other indicators
                 else:
                     
                     # Assign the calculated indicator values to a DataFrame column if they match the data length
@@ -437,43 +303,16 @@ def plot_indicators(ticker, stock_data, indicators):
                     
                     # Check if the stock data has data
                     if (validate_data(stock_data[indicator])):
-                    
-                        mpf_kwargs = {
-            				"type": "line",  
-            				"style": "charles",
-            				"title": f"{ticker} {indicator.upper()}",
-            				"ylabel": "Price (USD)",
-            				"addplot": [
-            					mpf.make_addplot(stock_data[indicator], panel=panel, color=color, linestyle=linestyle, label=f"{indicator.upper()}", ylabel=indicator.upper())  # Separate panel with custom ylabel
-            				],
-            				"volume": False,
-            			}
-                        
             			# Plot the indicator chart
-                        fig, axlist = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
-                        st.pyplot(fig)
+                        mpf_kwargs["addplot"].append(mpf.make_addplot(stock_data[indicator], panel=panel, color=color, linestyle=linestyle, label=f"{indicator.upper()}"))
                         
                     else:
                         st.warning(f"Cannot plot {indicator.upper()} due to insufficient data")
     
-                    
             except Exception as e:
                 st.error(f"Error plotting {indicator.upper()} for {ticker}: {e}")
                 continue
 
-    # Plot volume chart as a standalone panel if requested
-    if volume_requested:
-        
-        try: 
-            mpf_kwargs = {
-                "type": "line",
-                "style": "charles",
-                "title": f"{ticker} Volume",
-                "volume": True,  # Display volume as a standalone chart
-                "ylabel_lower": "Volume",
-            }
-            fig, ax = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
-            st.pyplot(fig)
-            
-        except Exception as e:
-            st.error(f"Error plotting volume for {ticker}: {e}")
+    # Plot 
+    fig, ax = mpf.plot(stock_data, **mpf_kwargs, returnfig=True)
+    st.pyplot(fig)
