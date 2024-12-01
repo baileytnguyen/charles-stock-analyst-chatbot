@@ -36,7 +36,7 @@ A website AI Chatbot that can produce stock charts with indicators based on user
 
 5. **Set up environment variables:**
 
-   - Download the [.env](http://_vscodecontentref_/11) file from your Teams Agile Group Project and place it in the root directory of the project.
+   - Create .env file and place it in the root directory of the project. Reference sampleenv
 
 6. **Run the application:**
    ```sh

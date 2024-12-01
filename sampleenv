@@ -1,0 +1,4 @@
+SUPABASE_URL = "test"
+SUPABASE_API_KEY = "test"
+POLYGON_API_KEY = "test"
+OPENAI_API_KEY = "test"
