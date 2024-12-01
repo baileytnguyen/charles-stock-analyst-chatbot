@@ -111,6 +111,10 @@ You can specify to see the stock's news and financials as well:
 - **pages/subscribeUser.py**: Page for subscribing to the service.
 - **pages/unsubscribeUser.py**: Page for unsubscribing from the service.
 
+## SUPABASE DB Schema
+
+![alt text](docs/supabase_schema.png)
+
 ## Acknowledgements
 
 - [Streamlit](https://streamlit.io/)
